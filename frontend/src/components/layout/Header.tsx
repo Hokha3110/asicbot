@@ -21,7 +21,7 @@ export const Header: React.FC<HeaderProps> = ({
   activeTab
 }) => {
   return (
-    <header className="h-14 border-b border-emerald-950/80 bg-[#09110d]/90 backdrop-blur-md px-3 sm:px-6 flex items-center justify-between shrink-0 z-30">
+    <header className="h-14 min-w-0 shrink-0 border-b border-emerald-950/80 bg-[#09110d]/90 backdrop-blur-md px-3 sm:px-6 flex items-center justify-between z-30">
       {/* Left side: Hamburger & Knowledge Stats */}
       <div className="flex items-center gap-3">
         <button
@@ -32,32 +32,32 @@ export const Header: React.FC<HeaderProps> = ({
           <Menu className="w-5 h-5" />
         </button>
 
-        <div className="hidden sm:flex items-center gap-3 text-xs">
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-900 border border-emerald-950">
+        <div className="hidden lg:flex items-center gap-3 text-xs min-w-0">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-900 border border-emerald-950 whitespace-nowrap">
             <BookOpen className="w-3.5 h-3.5 text-emerald-400" />
             <span className="text-slate-400">Knowledge:</span>
             <span className="font-mono text-emerald-300 font-bold">{indexedDocsCount} docs</span>
           </div>
           
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-900 border border-emerald-950">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-900 border border-emerald-950 whitespace-nowrap">
             <Activity className="w-3.5 h-3.5 text-emerald-400" />
             <span className="text-slate-400">Catalog:</span>
             <span className="font-mono text-emerald-300 font-bold">{solutionsCount} solutions</span>
           </div>
         </div>
 
-        <div className="block sm:hidden">
+        <div className="block lg:hidden min-w-0">
           <span className="font-bold text-xs text-white">KALI0T</span>
         </div>
       </div>
 
       {/* Right side: AI Selector & Mobile Toggle */}
-      <div className="flex items-center gap-2">
-        <div className="flex items-center gap-1.5 text-xs">
+      <div className="flex items-center gap-2 min-w-0">
+        <div className="flex items-center gap-1.5 text-xs min-w-0">
           <select
             value={llmProvider}
             onChange={(e) => setLlmProvider(e.target.value)}
-            className="bg-[#0b1612] text-xs font-mono text-emerald-300 border border-emerald-900/60 rounded-lg px-2.5 py-1 focus:outline-none focus:border-emerald-500 cursor-pointer"
+            className="max-w-[min(42vw,15rem)] bg-[#0b1612] text-xs font-mono text-emerald-300 border border-emerald-900/60 rounded-lg px-2.5 py-1 focus:outline-none focus:border-emerald-500 cursor-pointer"
           >
             <option value="gemini">✨ Google Gemini 2.5 Flash</option>
             <option value="openai">OpenAI GPT-4o</option>

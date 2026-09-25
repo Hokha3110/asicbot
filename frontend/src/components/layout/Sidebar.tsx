@@ -10,7 +10,9 @@ import {
   UserCheck, 
   X,
   MessageSquareText,
-  Plus
+  Plus,
+  PanelLeftClose,
+  PanelLeftOpen
 } from 'lucide-react';
 import { ConversationSummary, User } from '../../types';
 
@@ -23,6 +25,8 @@ interface SidebarProps {
   conversations: ConversationSummary[];
   activeConversationId: number | null;
   onLoadConversation: (conversationId: number) => void;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
   isOpenMobile?: boolean;
   onCloseMobile?: () => void;
 }
@@ -36,6 +40,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   conversations,
   activeConversationId,
   onLoadConversation,
+  isCollapsed = false,
+  onToggleCollapse,
   isOpenMobile = false,
   onCloseMobile
 }) => {
@@ -60,12 +66,49 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Sidebar */}
       <aside className={`
         fixed md:static inset-y-0 left-0 z-50
-        w-64 bg-[#09110d] border-r border-emerald-950/70 flex flex-col justify-between h-screen shrink-0 select-none
-        transform transition-transform duration-300 ease-in-out
+        w-64 ${isCollapsed ? 'md:w-14' : 'md:w-64'} bg-[#09110d] border-r border-emerald-950/70 flex flex-col justify-between h-screen shrink-0 select-none md:relative
+        transform transition-[width,border-color,transform] duration-300 ease-in-out
         ${isOpenMobile ? 'translate-x-0 shadow-2xl' : '-translate-x-full md:translate-x-0'}
       `}>
+        {isCollapsed && (
+          <div className="hidden md:flex flex-col items-center gap-3 pt-3">
+            <button
+              onClick={onToggleCollapse}
+              className="w-9 h-9 flex items-center justify-center rounded-lg bg-emerald-950 text-emerald-300 border border-emerald-800 hover:bg-emerald-900"
+              title="Mở sidebar"
+            >
+              <PanelLeftOpen className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => onLoadConversation(0)}
+              className="w-9 h-9 flex items-center justify-center rounded-lg bg-emerald-600 text-white hover:bg-emerald-500"
+              title="New chat"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id as any)}
+                  className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors ${
+                    isActive
+                      ? 'bg-emerald-950 text-emerald-300 border border-emerald-700'
+                      : 'text-slate-400 hover:bg-emerald-950/60 hover:text-emerald-300'
+                  }`}
+                  title={item.label}
+                >
+                  <Icon className="w-4 h-4" />
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         {/* Brand Header */}
-        <div>
+        <div className={isCollapsed ? 'md:hidden' : ''}>
           <div className="p-4 border-b border-emerald-950/80 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-glow-jade">
@@ -85,6 +128,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
             >
               <X className="w-5 h-5" />
             </button>
+            {onToggleCollapse && (
+              <button
+                onClick={onToggleCollapse}
+                className="hidden md:flex p-1 rounded-lg text-slate-400 hover:text-white hover:bg-emerald-950"
+                title="Thu sidebar"
+              >
+                <PanelLeftClose className="w-4 h-4" />
+              </button>
+            )}
           </div>
 
           {/* Navigation Menu */}
@@ -169,7 +221,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* User Footer */}
-        <div className="p-3 border-t border-emerald-950/80 bg-[#070c09]">
+        <div className={`p-3 border-t border-emerald-950/80 bg-[#070c09] ${isCollapsed ? 'md:hidden' : ''}`}>
           {currentUser ? (
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5 min-w-0">

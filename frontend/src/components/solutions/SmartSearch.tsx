@@ -32,7 +32,7 @@ export const SmartSearch: React.FC<SmartSearchProps> = ({ onResults, onClear }) 
   };
 
   return (
-    <div className="glass-panel-glow rounded-2xl p-4 sm:p-5 mb-6 border-emerald-950">
+    <div className="glass-panel-glow rounded-2xl p-4 sm:p-5 mb-3 border-emerald-950">
       <div className="flex items-center gap-2 mb-1.5">
         <Sparkles className="w-4 h-4 text-emerald-400" />
         <h3 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider">
@@ -44,8 +44,8 @@ export const SmartSearch: React.FC<SmartSearchProps> = ({ onResults, onClear }) 
       </p>
 
       {/* Input Bar */}
-      <div className="flex items-center gap-2 mb-3">
-        <div className="relative flex-1">
+      <div className="flex items-center gap-2 mb-3 min-w-0">
+        <div className="relative flex-1 min-w-0">
           <Search className="w-4 h-4 absolute left-3 top-3 text-emerald-400" />
           <input
             type="text"

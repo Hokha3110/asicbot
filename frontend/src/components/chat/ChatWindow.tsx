@@ -46,10 +46,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-[#070b09] relative overflow-hidden">
+    <div className="relative flex min-h-0 min-w-0 flex-1 flex-col h-full bg-[#070b09] overflow-hidden">
       {/* Top Bar */}
-      <div className="px-4 sm:px-6 py-2 border-b border-emerald-950/80 bg-[#09110d]/50 flex items-center justify-between text-xs">
-        <div className="flex items-center gap-2 text-slate-400 truncate">
+      <div className="px-4 sm:px-6 py-2 border-b border-emerald-950/80 bg-[#09110d]/50 flex items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2 text-slate-400 min-w-0 truncate">
           <Sparkles className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
           <span className="truncate">AI Presales Assistant (Định dạng 8 phần chuẩn hóa)</span>
         </div>
@@ -65,7 +65,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="min-h-0 flex-1 overflow-y-auto">
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center p-6 text-center max-w-xl mx-auto">
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-glow-jade mb-4">

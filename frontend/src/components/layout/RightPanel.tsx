@@ -6,6 +6,8 @@ import {
   X,
   Zap,
   Layers
+  ,PanelRightClose
+  ,Menu
 } from 'lucide-react';
 import { DetectedSolution, SourceReference } from '../../types';
 
@@ -17,6 +19,8 @@ interface RightPanelProps {
   isTransforming: boolean;
   isOpenMobile?: boolean;
   onCloseMobile?: () => void;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 export const RightPanel: React.FC<RightPanelProps> = ({
@@ -27,6 +31,8 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   isTransforming,
   isOpenMobile = false,
   onCloseMobile
+  ,isCollapsed = false
+  ,onToggleCollapse
 }) => {
   const modes = [
     { id: 'technical', label: 'Technical Explanation', desc: 'Kiến trúc & Tích hợp' },
@@ -47,10 +53,53 @@ export const RightPanel: React.FC<RightPanelProps> = ({
 
       <aside className={`
         fixed md:static inset-y-0 right-0 z-50
-        w-80 bg-[#09110d] border-l border-emerald-950/80 flex flex-col h-screen md:h-full shrink-0 overflow-y-auto p-4 space-y-5
-        transform transition-transform duration-300 ease-in-out
+        ${isCollapsed ? 'w-14 overflow-hidden' : 'w-80'} bg-[#09110d] border-l border-emerald-950/80 flex flex-col h-screen md:h-full shrink-0 md:relative
+        transform transition-[width,border-color,transform] duration-300 ease-in-out
         ${isOpenMobile ? 'translate-x-0 shadow-2xl' : 'translate-x-full md:translate-x-0'}
       `}>
+        {isCollapsed && (
+          <div className="hidden md:flex flex-col items-center gap-3 pt-3">
+            <button
+              onClick={onToggleCollapse}
+              className="w-9 h-9 flex items-center justify-center rounded-lg bg-emerald-950 text-emerald-300 border border-emerald-800 hover:bg-emerald-900"
+              title="Mở panel phải"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => onToggleCollapse?.()}
+              className="w-9 h-9 flex items-center justify-center rounded-lg text-emerald-300 hover:bg-emerald-950/60"
+              title="Presales modes"
+            >
+              <Sparkles className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => onToggleCollapse?.()}
+              className="w-9 h-9 flex items-center justify-center rounded-lg text-slate-400 hover:bg-emerald-950/60 hover:text-emerald-300"
+              title="Solutions detected"
+            >
+              <Target className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => onToggleCollapse?.()}
+              className="w-9 h-9 flex items-center justify-center rounded-lg text-slate-400 hover:bg-emerald-950/60 hover:text-emerald-300"
+              title="Source references"
+            >
+              <FileText className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+        {!isCollapsed && onToggleCollapse && (
+          <button
+            onClick={onToggleCollapse}
+            className="hidden md:flex absolute right-2 top-3 z-10 w-8 h-8 items-center justify-center rounded-lg bg-emerald-950 text-emerald-300 border border-emerald-800 hover:bg-emerald-900"
+            title="Thu panel phải"
+          >
+            <PanelRightClose className="w-4 h-4" />
+          </button>
+        )}
+
+        {!isCollapsed && <div className="h-full min-w-0 overflow-y-auto p-4 space-y-5">
         {/* Mobile Header */}
         <div className="flex items-center justify-between md:hidden pb-3 border-b border-emerald-950">
           <div className="flex items-center gap-2">
@@ -182,6 +231,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
             </div>
           )}
         </div>
+        </div>}
       </aside>
     </>
   );

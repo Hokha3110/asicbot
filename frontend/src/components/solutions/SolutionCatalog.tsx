@@ -50,7 +50,7 @@ export const SolutionCatalog: React.FC<SolutionCatalogProps> = ({ onOpenChatWith
   const categories = ['all', 'BAS', 'DSPM', 'Identity', 'SOC', 'DevSecOps'];
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-[#070b09] overflow-y-auto p-4 sm:p-6 md:p-8">
+    <div className="min-w-0 flex-1 flex flex-col h-full bg-[#070b09] overflow-y-auto overflow-x-hidden p-4 sm:p-6 md:p-8">
       {/* Page Title */}
       <div className="mb-6">
         <div className="flex items-center gap-2.5">
@@ -75,7 +75,7 @@ export const SolutionCatalog: React.FC<SolutionCatalogProps> = ({ onOpenChatWith
       />
 
       {/* Category Pills */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-3 mb-5">
+      <div className="flex min-h-9 items-center gap-1.5 overflow-x-auto pb-1 mb-3">
         {categories.map((cat) => (
           <button
             key={cat}
@@ -92,12 +92,12 @@ export const SolutionCatalog: React.FC<SolutionCatalogProps> = ({ onOpenChatWith
       </div>
 
       {/* Solution Grid Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="min-w-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {displayedSolutions.map((sol) => (
           <div
             key={sol.id}
             onClick={() => setSelectedSolution(sol)}
-            className="glass-card rounded-2xl p-5 flex flex-col justify-between cursor-pointer group"
+            className="min-w-0 glass-card rounded-2xl p-5 flex flex-col justify-between cursor-pointer group"
           >
             <div>
               {/* Header info */}

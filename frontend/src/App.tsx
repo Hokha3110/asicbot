@@ -22,6 +22,8 @@ export function App() {
   // Mobile Drawer State
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isMobileRightPanelOpen, setIsMobileRightPanelOpen] = useState(false);
+  const [isLeftSidebarCollapsed, setIsLeftSidebarCollapsed] = useState(false);
+  const [isRightPanelCollapsed, setIsRightPanelCollapsed] = useState(false);
 
   // App settings & Auth state
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -223,7 +225,7 @@ export function App() {
   };
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#070b14] text-slate-100">
+    <div className="flex h-screen min-h-[100dvh] w-full min-w-0 overflow-hidden bg-[#070b14] text-slate-100">
       {/* 1. Left Sidebar (With Mobile Drawer support) */}
       <Sidebar
         activeTab={activeTab}
@@ -234,12 +236,14 @@ export function App() {
         conversations={conversationHistory}
         activeConversationId={activeConversationId}
         onLoadConversation={handleLoadConversation}
+        isCollapsed={isLeftSidebarCollapsed}
+        onToggleCollapse={() => setIsLeftSidebarCollapsed((collapsed) => !collapsed)}
         isOpenMobile={isMobileSidebarOpen}
         onCloseMobile={() => setIsMobileSidebarOpen(false)}
       />
 
       {/* Main Workspace Layout */}
-      <div className="flex-1 flex flex-col min-w-0 h-full">
+      <div className="flex min-w-0 flex-1 flex-col h-full">
         {/* 2. Top Header with Mobile triggers */}
         <Header
           llmProvider={llmProvider}
@@ -252,8 +256,8 @@ export function App() {
         />
 
         {/* 3. Center Interactive Area */}
-        <div className="flex-1 flex min-h-0 overflow-hidden relative">
-          {activeTab === 'chat' && (
+        <div className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden">
+          {activeTab === 'chat' && (isMobileRightPanelOpen || !('ontouchstart' in window)) && (
             <ChatWindow
               messages={messages}
               onSendMessage={handleSendMessage}
@@ -314,6 +318,8 @@ export function App() {
               isTransforming={isTransforming}
               isOpenMobile={isMobileRightPanelOpen}
               onCloseMobile={() => setIsMobileRightPanelOpen(false)}
+              isCollapsed={isRightPanelCollapsed}
+              onToggleCollapse={() => setIsRightPanelCollapsed((collapsed) => !collapsed)}
             />
           )}
         </div>
