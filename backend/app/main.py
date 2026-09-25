@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
 from app.database import Base, engine, SessionLocal
-from app.routers import auth, documents, chat, solutions, battlecards, conversations
+from app.routers import auth, documents, chat, solutions, battlecards, conversations, users
 from app.seed.init_data import seed_database
 
 def background_initial_seed():
@@ -55,6 +55,7 @@ app.include_router(documents.router)
 app.include_router(solutions.router)
 app.include_router(battlecards.router)
 app.include_router(conversations.router)
+app.include_router(users.router)
 
 @app.get("/api/health", tags=["Health"])
 def health_check():

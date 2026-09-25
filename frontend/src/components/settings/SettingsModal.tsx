@@ -279,6 +279,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
               {/* Action buttons for Google Drive */}
               <div className="flex items-center gap-2 pt-1 flex-wrap">
+                <a
+                  href="http://localhost:8000/api/v1/auth/google/login"
+                  className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-glow-jade"
+                  title="Ủy quyền truy cập Google Drive của bạn"
+                >
+                  <Cloud className="w-3.5 h-3.5 text-white" />
+                  <span>Đăng nhập Google để kết nối Drive</span>
+                </a>
+
                 <button
                   type="button"
                   onClick={handleTestDrive}

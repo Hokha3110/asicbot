@@ -97,10 +97,10 @@ async def upload_document(
 ):
     filename = file.filename
     ext = os.path.splitext(filename)[1].lower().replace(".", "")
-    if ext not in ["pdf", "docx", "pptx", "txt"]:
+    if ext not in DocumentParserService.SUPPORTED_EXTENSIONS:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Định dạng file không hỗ trợ. Vui lòng upload PDF, DOCX hoặc PPTX."
+            detail="Định dạng file chưa được hỗ trợ để index."
         )
 
     # 1. Save file locally on Linux server
@@ -117,14 +117,8 @@ async def upload_document(
     gdrive_result = gdrive_service.upload_file_to_drive(saved_file_path, filename, mime_type)
 
     # 3. Parse text based on format
-    if ext == "pdf":
-        pages = DocumentParserService.parse_pdf(saved_file_path)
-    elif ext == "docx":
-        pages = DocumentParserService.parse_docx(saved_file_path)
-    elif ext == "pptx":
-        pages = DocumentParserService.parse_pptx(saved_file_path)
-    else:
-        pages = DocumentParserService._fallback_text_extract(saved_file_path)
+    pages = DocumentParserService.parse_file(saved_file_path, ext)
+    document_status = "indexed" if pages else "stored"
 
     # Auto detect vendor/category if not provided
     sample_text = " ".join([p["text"] for p in pages[:3]])
@@ -163,7 +157,7 @@ async def upload_document(
             page_count=len(pages) or 1,
             chunk_count=len(chunks),
             file_size_bytes=file_size,
-            status="indexed",
+            status=document_status,
             doc_metadata=doc_metadata
         )
         db.add(doc_record)
@@ -173,7 +167,7 @@ async def upload_document(
         doc_record.page_count = len(pages) or 1
         doc_record.chunk_count = len(chunks)
         doc_record.file_size_bytes = file_size
-        doc_record.status = "indexed"
+        doc_record.status = document_status
         doc_record.doc_metadata = doc_metadata
 
     db.commit()

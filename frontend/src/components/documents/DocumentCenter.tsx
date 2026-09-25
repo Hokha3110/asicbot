@@ -452,13 +452,24 @@ export const DocumentCenter: React.FC<DocumentCenterProps> = ({ currentUser, onS
             </div>
 
             {/* Modal Footer */}
-            <div className="p-4 border-t border-emerald-950 flex justify-end gap-2 bg-[#08100c]">
+            <div className="p-4 border-t border-emerald-950 flex justify-end items-center gap-2 bg-[#08100c]">
               <button
                 onClick={() => setIsSyncModalOpen(false)}
                 className="px-4 py-2 rounded-xl bg-surface-900 hover:bg-surface-800 text-xs text-slate-300 font-semibold"
               >
                 Đóng
               </button>
+              
+              {syncResult && !syncResult.drive_connected && (
+                <a
+                  href="http://localhost:8000/api/v1/auth/google/login"
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-xs text-white font-bold flex items-center gap-1.5 shadow-glow-jade"
+                >
+                  <Cloud className="w-3.5 h-3.5" />
+                  <span>Đăng nhập Google để kết nối Drive</span>
+                </a>
+              )}
+
               <button
                 onClick={handleTriggerSync}
                 disabled={isSyncingDrive}

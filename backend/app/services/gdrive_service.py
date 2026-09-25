@@ -12,46 +12,88 @@ class GoogleDriveService:
         self.last_sync_time = None
 
     def get_folder_id(self) -> str:
-        return settings.GOOGLE_DRIVE_FOLDER_ID or ""
+        return settings.GOOGLE_DRIVE_FOLDER_ID or "1vk4wIUrIXJ7LwlTLuoyhq8h2w4Dpc0Ra"
 
     def _get_drive_service(self, custom_sa_json: Optional[str] = None):
         """
-        Initializes Google Drive API v3 client using Service Account credentials.
+        Initializes Google Drive API v3 client using:
+        1. OAuth2 User Credentials (google_drive_tokens.json)
+        2. Service Account credentials (service_account.json or GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON)
         """
         try:
-            from google.oauth2 import service_account
             from googleapiclient.discovery import build
+            from google.oauth2 import credentials as oauth_credentials
+            from google.oauth2 import service_account
 
             SCOPES = ['https://www.googleapis.com/auth/drive', 'https://www.googleapis.com/auth/drive.readonly']
-            creds = None
 
-            # 1. Check custom JSON passed directly
+            # 1. Check OAuth2 token file generated after user logs in with Google
+            token_candidates = [
+                getattr(settings, 'GOOGLE_DRIVE_TOKENS_PATH', './google_drive_tokens.json'),
+                "./google_drive_tokens.json",
+                "../google_drive_tokens.json",
+                "./backend/google_drive_tokens.json"
+            ]
+            for t_path in token_candidates:
+                if os.path.exists(t_path):
+                    try:
+                        with open(t_path, "r", encoding="utf-8") as tf:
+                            t_data = json.load(tf)
+                            if t_data.get("access_token") or t_data.get("refresh_token"):
+                                creds = oauth_credentials.Credentials(
+                                    token=t_data.get("access_token"),
+                                    refresh_token=t_data.get("refresh_token"),
+                                    token_uri=t_data.get("token_uri", "https://oauth2.googleapis.com/token"),
+                                    client_id=t_data.get("client_id", settings.GOOGLE_CLIENT_ID),
+                                    client_secret=t_data.get("client_secret", settings.GOOGLE_CLIENT_SECRET),
+                                    scopes=SCOPES
+                                )
+                                self._service = build('drive', 'v3', credentials=creds)
+                                return self._service
+                    except Exception as e:
+                        print(f"[GoogleDriveService] OAuth token load notice: {e}")
+
+            # 2. Check custom JSON passed directly
             if custom_sa_json and custom_sa_json.strip().startswith('{'):
-                info = json.loads(custom_sa_json)
-                creds = service_account.Credentials.from_service_account_info(info, scopes=SCOPES)
+                try:
+                    info = json.loads(custom_sa_json)
+                    if info.get("type") == "service_account":
+                        creds = service_account.Credentials.from_service_account_info(info, scopes=SCOPES)
+                        self._service = build('drive', 'v3', credentials=creds)
+                        return self._service
+                except Exception:
+                    pass
 
-            # 2. Check direct JSON string in settings
-            elif settings.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON and settings.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON.strip().startswith('{'):
-                info = json.loads(settings.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON)
-                creds = service_account.Credentials.from_service_account_info(info, scopes=SCOPES)
+            # 3. Check direct JSON string in settings
+            if settings.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON and settings.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON.strip().startswith('{'):
+                try:
+                    info = json.loads(settings.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON)
+                    if info.get("type") == "service_account":
+                        creds = service_account.Credentials.from_service_account_info(info, scopes=SCOPES)
+                        self._service = build('drive', 'v3', credentials=creds)
+                        return self._service
+                except Exception:
+                    pass
             
-            # 3. Check service_account.json file path
-            elif os.path.exists(settings.GOOGLE_DRIVE_SERVICE_ACCOUNT_PATH):
-                creds = service_account.Credentials.from_service_account_file(
-                    settings.GOOGLE_DRIVE_SERVICE_ACCOUNT_PATH, 
-                    scopes=SCOPES
-                )
-            
-            # 4. Check root or backend directory fallback for service_account.json
-            else:
-                for candidate in ["./service_account.json", "../service_account.json", "./backend/service_account.json", "service_account.json"]:
-                    if os.path.exists(candidate):
-                        creds = service_account.Credentials.from_service_account_file(candidate, scopes=SCOPES)
-                        break
+            # 4. Check service_account.json file path
+            sa_candidates = [
+                settings.GOOGLE_DRIVE_SERVICE_ACCOUNT_PATH,
+                "./service_account.json",
+                "../service_account.json",
+                "./backend/service_account.json"
+            ]
+            for sa_path in sa_candidates:
+                if os.path.exists(sa_path):
+                    try:
+                        with open(sa_path, "r", encoding="utf-8") as f:
+                            data = json.load(f)
+                            if data.get("type") == "service_account":
+                                creds = service_account.Credentials.from_service_account_info(data, scopes=SCOPES)
+                                self._service = build('drive', 'v3', credentials=creds)
+                                return self._service
+                    except Exception as e:
+                        print(f"[GoogleDriveService] SA check notice: {e}")
 
-            if creds:
-                self._service = build('drive', 'v3', credentials=creds)
-                return self._service
         except Exception as e:
             print(f"[GoogleDriveService] Init notice: {e}")
 
@@ -61,6 +103,42 @@ class GoogleDriveService:
         service = self._get_drive_service()
         return service is not None
 
+    def _resolve_folder_id(self, service, folder_id: Optional[str] = None) -> Optional[str]:
+        """
+        Validates folder ID and provides smart auto-correction if typo or casing difference.
+        """
+        target_folder = folder_id.strip() if (folder_id and folder_id.strip()) else self.get_folder_id()
+        if not target_folder:
+            return None
+
+        # 1. Try direct check
+        try:
+            folder_meta = service.files().get(
+                fileId=target_folder,
+                supportsAllDrives=True,
+                fields="id, name, mimeType"
+            ).execute()
+            if folder_meta:
+                return target_folder
+        except Exception:
+            pass
+
+        # 2. Try search by name fallback for ASIC folder
+        try:
+            res = service.files().list(
+                q="name = 'TÀI LIỆU ASIC' and mimeType = 'application/vnd.google-apps.folder' and trashed = false",
+                supportsAllDrives=True,
+                includeItemsFromAllDrives=True,
+                fields="files(id, name)"
+            ).execute()
+            found = res.get('files', [])
+            if found:
+                return found[0]['id']
+        except Exception:
+            pass
+
+        return target_folder
+
     def test_connection(self, folder_id: Optional[str] = None, sa_json: Optional[str] = None) -> Dict[str, Any]:
         """
         Tests connection to Google Drive API and verifies folder accessibility.
@@ -69,25 +147,28 @@ class GoogleDriveService:
         if not service:
             return {
                 "success": False,
-                "message": "Không tìm thấy thông tin xác thực Google Service Account (service_account.json hoặc GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON)."
+                "message": "Chưa kết nối Google Drive. Vui lòng bấm 'Đăng nhập Google để kết nối Drive'."
             }
 
-        target_folder = folder_id or self.get_folder_id()
+        resolved_folder = self._resolve_folder_id(service, folder_id)
         try:
-            if target_folder:
-                # Check if folder is accessible
-                folder_meta = service.files().get(fileId=target_folder, fields="id, name, mimeType").execute()
+            if resolved_folder:
+                folder_meta = service.files().get(
+                    fileId=resolved_folder,
+                    supportsAllDrives=True,
+                    fields="id, name, mimeType"
+                ).execute()
                 return {
                     "success": True,
-                    "message": f"Kết nối Google Drive thành công! Thư mục: '{folder_meta.get('name', target_folder)}'",
+                    "message": f"Kết nối Google Drive thành công! Đã tìm thấy thư mục: '{folder_meta.get('name', resolved_folder)}'",
                     "folder_name": folder_meta.get("name"),
-                    "folder_id": target_folder
+                    "folder_id": resolved_folder
                 }
             else:
                 about = service.about().get(fields="user").execute()
                 return {
                     "success": True,
-                    "message": f"Kết nối Google Drive thành công qua Service Account!",
+                    "message": f"Kết nối Google Drive thành công qua tài khoản Google!",
                     "user": about.get("user")
                 }
         except Exception as e:
@@ -98,23 +179,25 @@ class GoogleDriveService:
 
     def list_files_in_folder(self, folder_id: Optional[str] = None, sa_json: Optional[str] = None) -> List[Dict[str, Any]]:
         """
-        Lists all document files (PDF, DOCX, PPTX, TXT, Google Docs) in the Google Drive folder.
+        Lists all document files (PDF, DOCX, PPTX, XLSX, TXT, Google Docs) in the Google Drive folder.
         """
         service = self._get_drive_service(sa_json)
         if not service:
             return []
 
-        target_folder = folder_id or self.get_folder_id()
+        resolved_folder = self._resolve_folder_id(service, folder_id)
         all_files = []
         page_token = None
 
         try:
-            query = f"'{target_folder}' in parents and trashed = false" if target_folder else "trashed = false"
+            query = f"'{resolved_folder}' in parents and trashed = false" if resolved_folder else "trashed = false"
             while True:
                 results = service.files().list(
                     q=query,
                     pageSize=100,
                     pageToken=page_token,
+                    supportsAllDrives=True,
+                    includeItemsFromAllDrives=True,
                     fields="nextPageToken, files(id, name, mimeType, size, modifiedTime, webViewLink, webContentLink, iconLink)"
                 ).execute()
                 
@@ -148,7 +231,7 @@ class GoogleDriveService:
             elif mime_type == 'application/vnd.google-apps.presentation':
                 request = service.files().export_media(fileId=file_id, mimeType='application/pdf')
             else:
-                request = service.files().get_media(fileId=file_id)
+                request = service.files().get_media(fileId=file_id, supportsAllDrives=True)
 
             fh = io.FileIO(dest_path, 'wb')
             downloader = MediaIoBaseDownload(fh, request)
@@ -160,44 +243,6 @@ class GoogleDriveService:
         except Exception as e:
             print(f"[GoogleDriveService] Error downloading file {file_id} from Google Drive: {e}")
             return False
-
-    def upload_file_to_drive(self, local_path: str, filename: str, mime_type: str = "application/pdf") -> Optional[Dict[str, Any]]:
-        """
-        Uploads a local file to Google Drive.
-        """
-        service = self._get_drive_service()
-        folder_id = self.get_folder_id()
-
-        if not service:
-            return {
-                "file_id": f"gdrive_sim_{abs(hash(filename))}",
-                "drive_url": f"https://drive.google.com/drive/folders/{folder_id or 'presales'}",
-                "sync_status": "synced_local_and_drive"
-            }
-
-        try:
-            from googleapiclient.http import MediaFileUpload
-
-            file_metadata = {'name': filename}
-            if folder_id:
-                file_metadata['parents'] = [folder_id]
-
-            media = MediaFileUpload(local_path, mimetype=mime_type, resumable=True)
-            drive_file = service.files().create(
-                body=file_metadata,
-                media_body=media,
-                fields='id, name, webViewLink, webContentLink'
-            ).execute()
-
-            return {
-                "file_id": drive_file.get('id'),
-                "drive_url": drive_file.get('webViewLink'),
-                "download_link": drive_file.get('webContentLink'),
-                "sync_status": "synced_to_drive"
-            }
-        except Exception as e:
-            print(f"[GoogleDriveService] Error uploading to Google Drive: {e}")
-            return None
 
     def sync_all_from_drive(self, db: Session, folder_id: Optional[str] = None, sa_json: Optional[str] = None) -> Dict[str, Any]:
         """
@@ -226,7 +271,7 @@ class GoogleDriveService:
                 mime_type = f.get('mimeType', '')
                 file_id = f.get('id')
                 web_link = f.get('webViewLink', f"https://drive.google.com/file/d/{file_id}/view")
-                file_size = int(f.get('size', 0))
+                file_size = int(f.get('size', 0)) if f.get('size') else 0
 
                 # Handle name and extension
                 fname = original_name
@@ -340,17 +385,25 @@ class GoogleDriveService:
                 "timestamp": self.last_sync_time
             }
 
-        # Fallback / Local sync when Drive credentials are still pending or Drive folder is empty
-        from app.seed.init_data import _auto_import_existing_documents
-        _auto_import_existing_documents(db)
+        # Fallback notice if Drive is not yet connected
+        is_drive_active = self.is_configured()
+        if not is_drive_active:
+            return {
+                "message": "Chưa kết nối Google Drive. Vui lòng bấm 'Đăng nhập Google để kết nối Drive'.",
+                "synced_count": 0,
+                "total_chunks": 0,
+                "synced_files": [],
+                "errors": ["Chưa xác thực Google Drive OAuth2 hoặc Service Account."],
+                "drive_connected": False,
+                "timestamp": datetime.datetime.now().isoformat()
+            }
 
-        all_docs = db.query(Document).all()
         return {
-            "message": f"Đã đồng bộ {len(all_docs)} tài liệu giải pháp trên Máy chủ Linux vào Vector Knowledge Base & Web!",
-            "synced_count": len(all_docs),
-            "total_chunks": sum(d.chunk_count for d in all_docs),
-            "synced_files": [{"name": d.document_name, "vendor": d.vendor, "category": d.solution_category, "pages": d.page_count, "chunks": d.chunk_count} for d in all_docs],
-            "drive_connected": self.is_configured(),
+            "message": "Thư mục Google Drive trống hoặc không tìm thấy tài liệu phù hợp (PDF, DOCX, PPTX).",
+            "synced_count": 0,
+            "total_chunks": 0,
+            "synced_files": [],
+            "drive_connected": True,
             "errors": sync_errors,
             "timestamp": datetime.datetime.now().isoformat()
         }

@@ -1,3 +1,5 @@
+import os
+import json
 import secrets
 from datetime import timedelta
 from urllib.parse import urlencode
@@ -19,10 +21,11 @@ router = APIRouter(prefix="/api/v1/auth", tags=["Authentication"])
 
 GOOGLE_AUTHORIZE_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
+GOOGLE_TOKEN_INFO_URL = "https://oauth2.googleapis.com/tokeninfo"
 
 def _require_google_config():
     if not settings.GOOGLE_CLIENT_ID or not settings.GOOGLE_CLIENT_SECRET:
-        raise HTTPException(status_code=503, detail="Google OAuth chưa được cấu hình")
+        raise HTTPException(status_code=503, detail="Google OAuth chưa được cấu hình (thiếu GOOGLE_CLIENT_ID hoặc GOOGLE_CLIENT_SECRET)")
 
 def _google_username(email: str, db: Session) -> str:
     base = email.split("@", 1)[0].lower().replace(".", "_")[:80] or "google_user"
@@ -80,16 +83,17 @@ def google_login():
     _require_google_config()
     state = create_access_token(
         {"purpose": "google_oauth", "nonce": secrets.token_urlsafe(16)},
-        expires_delta=timedelta(minutes=10),
+        expires_delta=timedelta(minutes=15),
     )
     params = {
         "client_id": settings.GOOGLE_CLIENT_ID,
         "redirect_uri": settings.GOOGLE_REDIRECT_URI,
         "response_type": "code",
-        "scope": "openid email profile",
+        "scope": "openid email profile https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/drive.file",
         "state": state,
-        "access_type": "online",
-        "prompt": "select_account",
+        "access_type": "offline",
+        "prompt": "consent",
+        "include_granted_scopes": "true"
     }
     return RedirectResponse(f"{GOOGLE_AUTHORIZE_URL}?{urlencode(params)}")
 
@@ -119,8 +123,30 @@ async def google_callback(code: str, state: str, db: Session = Depends(get_db)):
 
     token_data = token_response.json()
     google_token = token_data.get("id_token")
+    access_token_drive = token_data.get("access_token")
+    refresh_token_drive = token_data.get("refresh_token")
+
+    # Save tokens for Google Drive background sync
+    try:
+        token_store_data = {
+            "access_token": access_token_drive,
+            "refresh_token": refresh_token_drive,
+            "client_id": settings.GOOGLE_CLIENT_ID,
+            "client_secret": settings.GOOGLE_CLIENT_SECRET,
+            "token_uri": GOOGLE_TOKEN_URL
+        }
+        for token_path in [settings.GOOGLE_DRIVE_TOKENS_PATH, "./google_drive_tokens.json", "./backend/google_drive_tokens.json"]:
+            try:
+                with open(token_path, "w", encoding="utf-8") as tf:
+                    json.dump(token_store_data, tf, indent=2)
+            except Exception:
+                pass
+    except Exception as e:
+        print(f"Notice saving Google Drive tokens: {e}")
+
     if not google_token:
-        raise HTTPException(status_code=400, detail="Google không trả về ID token")
+        # If user only requested Drive scope without full OpenID profile
+        return RedirectResponse(f"{settings.FRONTEND_URL.rstrip('/')}?gdrive_connected=true")
 
     try:
         profile = id_token.verify_oauth2_token(
@@ -128,8 +154,22 @@ async def google_callback(code: str, state: str, db: Session = Depends(get_db)):
             google_requests.Request(),
             settings.GOOGLE_CLIENT_ID,
         )
-    except ValueError:
-        raise HTTPException(status_code=401, detail="Google ID token không hợp lệ")
+    except ValueError as verify_error:
+        print(f"Google ID token local verification notice: {verify_error}")
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            info_response = await client.get(
+                GOOGLE_TOKEN_INFO_URL,
+                params={"id_token": google_token},
+            )
+        if info_response.status_code != 200:
+            raise HTTPException(status_code=401, detail="Google ID token không hợp lệ")
+
+        profile = info_response.json()
+        if (
+            profile.get("aud") != settings.GOOGLE_CLIENT_ID
+            or profile.get("iss") not in {"accounts.google.com", "https://accounts.google.com"}
+        ):
+            raise HTTPException(status_code=401, detail="Google ID token không hợp lệ với ứng dụng này")
 
     email = (profile.get("email") or "").lower().strip()
     if not email or not profile.get("email_verified"):
@@ -156,5 +196,5 @@ async def google_callback(code: str, state: str, db: Session = Depends(get_db)):
     db.refresh(user)
 
     access_token = create_access_token(data={"sub": user.username, "role": user.role})
-    redirect_url = f"{settings.FRONTEND_URL.rstrip('/')}?oauth_token={access_token}"
+    redirect_url = f"{settings.FRONTEND_URL.rstrip('/')}?oauth_token={access_token}&gdrive_connected=true"
     return RedirectResponse(redirect_url)

@@ -1,22 +1,23 @@
 import os
+import json
 from pydantic_settings import BaseSettings
 from typing import List
 
 class Settings(BaseSettings):
-    APP_NAME: str = "Kali0t"
+    APP_NAME: str = "Security Solution Copilot"
     APP_VERSION: str = "1.0.0"
     APP_ENV: str = "production"
     HOST: str = "0.0.0.0"
     PORT: int = 8000
     
     # JWT Security
-    SECRET_KEY: str = ""
+    SECRET_KEY: str = "cyber-presales-sec-copilot-jwt-super-secret-key-2026"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440 # 24 hours
 
     # Google OAuth
-    GOOGLE_CLIENT_ID: str = ""
-    GOOGLE_CLIENT_SECRET: str = ""
+    GOOGLE_CLIENT_ID: str = "222975697295-sjerq0nnb37r4ofc71tfl1pam1gi6g6q.apps.googleusercontent.com"
+    GOOGLE_CLIENT_SECRET: str = "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"
     GOOGLE_REDIRECT_URI: str = "http://localhost:8000/api/v1/auth/google/callback"
     GOOGLE_ADMIN_EMAILS: str = ""
     FRONTEND_URL: str = "http://localhost:5173"
@@ -30,15 +31,16 @@ class Settings(BaseSettings):
     
     # Google Drive Cloud Integration
     GOOGLE_DRIVE_ENABLED: bool = True
-    GOOGLE_DRIVE_FOLDER_ID: str = "1vk4wIUrIXJ7LwlTluoyhq8h2w4Dpc0Ra"
+    GOOGLE_DRIVE_FOLDER_ID: str = "1vk4wIUrIXJ7LwlTLuoyhq8h2w4Dpc0Ra"
     GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON: str = "" # raw JSON or path to service_account.json
     GOOGLE_DRIVE_SERVICE_ACCOUNT_PATH: str = "./service_account.json"
+    GOOGLE_DRIVE_TOKENS_PATH: str = "./google_drive_tokens.json"
     
     # AI Engine
     DEFAULT_LLM_PROVIDER: str = "gemini" # "gemini", "openai", "ollama", "mock"
     
     # Google Gemini Config (Pre-configured)
-    GEMINI_API_KEY: str = ""
+    GEMINI_API_KEY: str = "AQ.Ab8RN6JAnXhufiAAcj08P6O-Yee5C7LL2WYgBC5kIiD2Pcg79g"
     GEMINI_MODEL: str = "gemini-2.5-flash"
     
     # OpenAI Config
@@ -66,11 +68,26 @@ class Settings(BaseSettings):
         return [email.strip().lower() for email in self.GOOGLE_ADMIN_EMAILS.split(",") if email.strip()]
 
     class Config:
-        # Support running from the repository root or from the backend directory.
         env_file = (".env", "../.env")
         extra = "ignore"
 
 settings = Settings()
+
+# Check and auto-load client credentials from service_account.json if present
+for sa_path in [settings.GOOGLE_DRIVE_SERVICE_ACCOUNT_PATH, "./service_account.json", "../service_account.json", "./backend/service_account.json"]:
+    if os.path.exists(sa_path):
+        try:
+            with open(sa_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                if "web" in data:
+                    web_info = data["web"]
+                    if web_info.get("client_id"):
+                        settings.GOOGLE_CLIENT_ID = web_info["client_id"]
+                    if web_info.get("client_secret"):
+                        settings.GOOGLE_CLIENT_SECRET = web_info["client_secret"]
+        except Exception:
+            pass
+        break
 
 # Ensure directories exist
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)

@@ -64,7 +64,7 @@ export const FileUploadModal: React.FC<FileUploadModalProps> = ({
             </div>
             <div>
               <h3 className="text-sm font-bold text-white">Upload Solution Document</h3>
-              <p className="text-[11px] text-slate-400">Hỗ trợ định dạng PDF, DOCX, PPTX</p>
+              <p className="text-[11px] text-slate-400">Hỗ trợ PDF, Word, Excel, PowerPoint và file văn bản</p>
             </div>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-white p-1 rounded-md hover:bg-slate-800">
@@ -78,7 +78,7 @@ export const FileUploadModal: React.FC<FileUploadModalProps> = ({
           <div className="border-2 border-dashed border-slate-700 hover:border-cyan-500/50 rounded-xl p-6 text-center cursor-pointer transition-colors bg-slate-900/30 relative">
             <input
               type="file"
-              accept=".pdf,.docx,.pptx,.txt"
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.md,.csv,.json,.xml,.html,.htm,.log,.yaml,.yml"
               onChange={handleFileChange}
               className="absolute inset-0 opacity-0 cursor-pointer"
             />
@@ -92,7 +92,7 @@ export const FileUploadModal: React.FC<FileUploadModalProps> = ({
               ) : (
                 <div>
                   <p className="text-xs font-semibold text-slate-200">Kéo thả file vào đây hoặc bấm để chọn</p>
-                  <p className="text-[11px] text-slate-500 mt-1">PDF, DOCX, PPTX (tối đa 50MB)</p>
+                  <p className="text-[11px] text-slate-500 mt-1">PDF, Word, Excel, PowerPoint, CSV, JSON, Markdown và text</p>
                 </div>
               )}
             </div>

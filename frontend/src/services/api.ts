@@ -6,6 +6,7 @@ import {
   BattleCardItem, 
   ChatMessageItem, 
   User,
+  UserAdminUpdate,
   ConversationRecord,
   ConversationSummary
 } from '../types';
@@ -270,6 +271,17 @@ export const api = {
   getGoogleLoginUrl: (): string => {
     return `${API_BASE_URL}/auth/google/login`;
   },
+  getUsers: async (): Promise<User[]> => {
+    const res = await apiClient.get('/users');
+    return res.data;
+  },
+  updateUser: async (userId: number, changes: UserAdminUpdate): Promise<User> => {
+    const res = await apiClient.patch(`/users/${userId}`, changes);
+    return res.data;
+  },
+  deleteUser: async (userId: number): Promise<void> => {
+    await apiClient.delete(`/users/${userId}`);
+  },
 
   getConversations: async (): Promise<ConversationSummary[]> => {
     const res = await apiClient.get('/conversations');
@@ -392,38 +404,7 @@ Page: 4-15`;
         }
       }
 
-      // Intelligent Local Catalog Matching Fallback
-      const lower = message.toLowerCase();
-      let sol = MOCK_SOLUTIONS[0];
-      if (lower.includes('dữ liệu') || lower.includes('dspm') || lower.includes('nhạy cảm')) {
-        sol = MOCK_SOLUTIONS[1];
-      } else if (lower.includes('quyền') || lower.includes('active directory') || lower.includes('ad')) {
-        sol = MOCK_SOLUTIONS[2];
-      } else if (lower.includes('soc') || lower.includes('siem') || lower.includes('log')) {
-        sol = MOCK_SOLUTIONS[3];
-      }
-
-      return {
-        reply: `## Solution\n${sol.name} (${sol.vendor})\n\n## Category\n${sol.category}\n\n## Problem solved\n${sol.problem}\n\n## Key capability\n${sol.features.map(f => `- ${f}`).join('\n')}\n\n## Use case\n${sol.use_case.map(u => `- ${u}`).join('\n')}\n\n## Customer discovery questions\n${sol.discovery_questions.map((q, i) => `${i + 1}. ${q}`).join('\n')}\n\n## Competitor / Alternative\n${sol.competitor.map(c => `- ${c}`).join('\n')}\n\n## Source reference\nDocument: ${sol.documents[0]?.document_name || 'Security Brochure.pdf'}\nPage: ${sol.documents[0]?.pages?.join(', ') || '1-5'}`,
-        detected_solutions: [
-          {
-            id: sol.id,
-            name: sol.name,
-            vendor: sol.vendor,
-            category: sol.category,
-            summary: sol.problem
-          }
-        ],
-        sources: [
-          {
-            document_name: sol.documents[0]?.document_name || "Security Brochure_update Jul 2026.pdf",
-            page_number: sol.documents[0]?.pages?.[0] || 4,
-            snippet: sol.description,
-            vendor: sol.vendor,
-            category: sol.category
-          }
-        ]
-      };
+      throw err;
     }
   },
 

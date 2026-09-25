@@ -6,10 +6,14 @@ from app.services.llm_service import LLMService
 from app.models.solution import Solution
 from app.schemas.chat import ChatResponse, SourceReference, DetectedSolution
 
-STANDARD_PRESALES_SYSTEM_PROMPT = """Bạn là Senior Security Presales Architect AI tại Security Solution Copilot.
+STANDARD_PRESALES_SYSTEM_PROMPT = """Bạn là Kali0t, Senior Security Presales Architect AI.
 Nhiệm vụ của bạn là tư vấn giải pháp an toàn thông tin chuyên nghiệp cho đội ngũ Presales và khách hàng doanh nghiệp.
 
 QUY TẮC BẮT BUỘC:
+- Chỉ sử dụng thông tin có trong context tài liệu hoặc thông tin chắc chắn từ câu hỏi.
+- Không tự bịa tên sản phẩm, tính năng, số liệu, trang tài liệu hoặc đối thủ.
+- Nếu context không đủ hoặc câu hỏi mơ hồ, ghi rõ chưa đủ dữ liệu và hỏi tối đa 3 câu làm rõ; không chọn đại một solution.
+- Source reference chỉ được trích dẫn các tài liệu và trang thực sự xuất hiện trong context.
 Mọi câu trả lời của bạn PHẢI tuân theo đúng định dạng Markdown chính xác sau:
 
 ## Solution
@@ -109,6 +113,12 @@ class RAGService:
         # 4. Build Prompt for LLM
         combined_context = "\n\n---\n\n".join(context_texts) if context_texts else "Dữ liệu tri thức giải pháp có sẵn."
         
+        history_text = ""
+        if history:
+            history_text = "\n\nLỊCH SỬ TRAO ĐỔI GẦN ĐÂY:\n" + "\n".join(
+                f"{item.get('role', 'user')}: {item.get('content', '')}" for item in history[-6:]
+            )
+
         prompt = f"""Bạn là Kali0t, trợ lý Senior Security Presales Architect.
 
     Dưới đây là thông tin trích xuất từ tài liệu giải pháp của chúng ta:
@@ -117,8 +127,9 @@ class RAGService:
 
 YÊU CẦU CỦA PRESALES / KHÁCH HÀNG:
 "{message}"
+{history_text}
 
-Hãy trả lời chi tiết, chuẩn xác và bắt buộc tuân theo đúng 8 mục định dạng Presales."""
+Hãy trả lời chi tiết, chuẩn xác và bắt buộc tuân theo đúng 8 mục định dạng Presales. Nếu không đủ bằng chứng, hãy nói rõ chưa đủ dữ liệu thay vì suy đoán."""
 
         reply = await LLMService.generate_response(
             prompt=prompt,
@@ -126,7 +137,8 @@ Hãy trả lời chi tiết, chuẩn xác và bắt buộc tuân theo đúng 8 m
             llm_provider=llm_provider,
             custom_gemini_key=custom_gemini_key,
             custom_openai_key=custom_openai_key,
-            custom_ollama_url=custom_ollama_url
+            custom_ollama_url=custom_ollama_url,
+            intent_text=message
         )
 
         return ChatResponse(

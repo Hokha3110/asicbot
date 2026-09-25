@@ -12,6 +12,7 @@ class LLMService:
         custom_gemini_key: Optional[str] = None,
         custom_openai_key: Optional[str] = None,
         custom_ollama_url: Optional[str] = None,
+        intent_text: Optional[str] = None,
         temperature: float = 0.3
     ) -> str:
         """
@@ -115,14 +116,15 @@ class LLMService:
                 print(f"Ollama call notice ({e}). Falling back to Presales Native Engine.")
 
         # 3. Built-in Smart Presales Generator (Ensures 100% reliable responses)
-        return LLMService._smart_presales_fallback_generator(prompt, system_prompt)
+        return LLMService._smart_presales_fallback_generator(intent_text or prompt, system_prompt)
 
     @staticmethod
     def _smart_presales_fallback_generator(prompt: str, system_prompt: Optional[str]) -> str:
         """
         Offline Presales Rule-based AI Engine adhering strictly to Presales guidelines.
         """
-        lower = prompt.lower()
+        # Route only from the user question, never retrieved context.
+        lower = prompt.lower().strip()
         
         # Check intent
         if any(w in lower for w in ["dữ liệu", "dspm", "nhạy cảm", "data", "phân loại", "định danh", "lộ lọt"]):
@@ -236,29 +238,24 @@ class LLMService:
                 "Page: 8-14"
             )
 
-        # General Security Copilot Response
+        # Do not select a solution for an ambiguous question. Ask a focused
+        # clarification instead of producing a plausible but irrelevant pitch.
         return (
-            "## Solution\n"
-            "Comprehensive Security Solution Suite (Picus BAS, Netwrix DSPM & Access Analyzer, Graylog SOC)\n\n"
-            "## Category\n"
-            "Integrated Cybersecurity Ecosystem (Data Protection, Threat Exposure & SOC Operations)\n\n"
+            "## Solution\nChưa xác định\n\n"
+            "## Category\nCần làm rõ nhu cầu\n\n"
             "## Problem solved\n"
-            "Đáp ứng nhu cầu bảo vệ toàn diện hệ thống thông tin của doanh nghiệp từ tầng Dữ liệu, Định danh, Kiểm tra thế trận phòng thủ đến Giám sát sự cố tập trung.\n\n"
+            "Câu hỏi hiện chưa đủ thông tin để chọn đúng giải pháp mà không suy đoán.\n\n"
             "## Key capability\n"
-            "- Bảo vệ và phân loại dữ liệu tự động với DSPM.\n"
-            "- Quản trị đặc quyền và kiểm soát quyền truy cập định danh với Access Analyzer.\n"
-            "- Kiểm tra và xác thực khả năng phòng thủ liên tục 24/7 với Picus BAS.\n"
-            "- Thu thập log, giám sát và cảnh báo an ninh tập trung với SIEM/XDR.\n\n"
+            "- Kali0t sẽ chỉ đề xuất giải pháp sau khi xác định đúng bài toán.\n\n"
             "## Use case\n"
-            "- Xây dựng chiến lược Zero Trust và quản trị rủi ro an toàn thông tin toàn diện.\n"
-            "- Tuân thủ quy định pháp luật Việt Nam (Nghị định 13/2023, Nghị định 53/2022) và tiêu chuẩn quốc tế.\n\n"
+            "- Hãy mô tả hệ thống, loại dữ liệu hoặc sự cố mà anh/chị đang cần xử lý.\n\n"
             "## Customer discovery questions\n"
-            "1. Ưu tiên hàng đầu của tổ chức trong giai đoạn này là Bảo vệ Dữ liệu, Giám sát SOC hay Đánh giá thế trận phòng thủ?\n"
-            "2. Hạ tầng của doanh nghiệp đang tập trung ở On-premise, Private Cloud hay Public Cloud?\n"
-            "3. Ngân sách và thời gian dự kiến triển khai giai đoạn 1 là khi nào?\n\n"
+            "1. Anh/chị cần bảo vệ dữ liệu, kiểm tra khả năng phòng thủ, quản trị quyền hay giám sát log?\n"
+            "2. Môi trường chính là On-premise, Cloud hay Hybrid?\n"
+            "3. Mục tiêu ưu tiên và tiêu chí lựa chọn giải pháp là gì?\n\n"
             "## Competitor / Alternative\n"
-            "- Palo Alto Networks, CrowdStrike Falcon, Microsoft Security\n\n"
+            "- Chưa xác định khi chưa rõ nhu cầu\n\n"
             "## Source reference\n"
-            "Document: Security Brochure_update Jul 2026.pdf\n"
-            "Page: Tổng quan giải pháp"
+            "Document: Chưa có nguồn đủ phù hợp\n"
+            "Page: N/A"
         )

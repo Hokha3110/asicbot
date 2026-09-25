@@ -8,11 +8,12 @@ import { SolutionCatalog } from './components/solutions/SolutionCatalog';
 import { BattleCardHub } from './components/battlecards/BattleCardHub';
 import { SettingsModal } from './components/settings/SettingsModal';
 import { LoginModal } from './components/auth/LoginModal';
+import { UserManagement } from './components/users/UserManagement';
 import { ChatMessageItem, ConversationRecord, ConversationSummary, DetectedSolution, SourceReference, User } from './types';
 import { api } from './services/api';
 
 export function App() {
-  const [activeTab, setActiveTab] = useState<'chat' | 'documents' | 'solutions' | 'battlecards' | 'settings'>('chat');
+  const [activeTab, setActiveTab] = useState<'chat' | 'documents' | 'solutions' | 'battlecards' | 'settings' | 'users'>('chat');
   const [messages, setMessages] = useState<ChatMessageItem[]>([]);
   const [detectedSolutions, setDetectedSolutions] = useState<DetectedSolution[]>([]);
   const [sources, setSources] = useState<SourceReference[]>([]);
@@ -127,7 +128,7 @@ export function App() {
       const fallbackMsg: ChatMessageItem = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: `## Solution\nPicus Complete Security Validation\n\n## Category\nBAS (Breach and Attack Simulation)\n\n## Problem solved\nDoanh nghiệp không biết các lớp phòng thủ Firewall/EDR/SIEM có thực sự chặn được hacker hay không.\n\n## Key capability\n- Mô phỏng 4000+ kịch bản tấn công MITRE ATT&CK 24/7\n- Tự động sinh rule khắc phục cho Firewall/WAF\n\n## Customer discovery questions\n1. Hiện tại đơn vị đo lường hiệu quả bảo mật bằng cách nào?\n2. Tần suất thực hiện Pentest là bao lâu?\n\n## Source reference\nDocument: Security Brochure_update Jul 2026.pdf | Page: 4`,
+        content: `## Kali0t chưa thể trả lời\n\nBackend AI hiện không kết nối được. Vui lòng kiểm tra backend/LLM rồi thử lại; Kali0t không tự đoán giải pháp khi thiếu dữ liệu tin cậy.`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       setMessages((prev) => [...prev, fallbackMsg]);
@@ -257,7 +258,7 @@ export function App() {
 
         {/* 3. Center Interactive Area */}
         <div className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden">
-          {activeTab === 'chat' && (isMobileRightPanelOpen || !('ontouchstart' in window)) && (
+          {activeTab === 'chat' && (
             <ChatWindow
               messages={messages}
               onSendMessage={handleSendMessage}
@@ -306,6 +307,10 @@ export function App() {
               llmProvider={llmProvider}
               setLlmProvider={setLlmProvider}
             />
+          )}
+
+          {activeTab === 'users' && currentUser?.role === 'admin' && (
+            <UserManagement currentUser={currentUser} />
           )}
 
           {/* 4. Right Context & Presales Actions Panel (Visible in chat mode / Responsive Mobile Drawer) */}

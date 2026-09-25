@@ -7,17 +7,22 @@ export interface User {
   is_active: boolean;
 }
 
+export interface UserAdminUpdate {
+  role?: 'admin' | 'user';
+  is_active?: boolean;
+}
+
 export interface DocumentItem {
   id: number;
   document_name: string;
   file_path: string;
-  file_type: 'pdf' | 'docx' | 'pptx' | 'txt';
+  file_type: string;
   vendor: string;
   solution_category: string;
   page_count: number;
   chunk_count: number;
   file_size_bytes: number;
-  status: 'processing' | 'indexed' | 'failed';
+  status: 'processing' | 'indexed' | 'stored' | 'failed';
   doc_metadata: Record<string, any>;
   created_date: string;
 }

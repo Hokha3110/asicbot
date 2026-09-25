@@ -17,8 +17,8 @@ import {
 import { ConversationSummary, User } from '../../types';
 
 interface SidebarProps {
-  activeTab: 'chat' | 'documents' | 'solutions' | 'battlecards' | 'settings';
-  setActiveTab: (tab: 'chat' | 'documents' | 'solutions' | 'battlecards' | 'settings') => void;
+  activeTab: 'chat' | 'documents' | 'solutions' | 'battlecards' | 'settings' | 'users';
+  setActiveTab: (tab: 'chat' | 'documents' | 'solutions' | 'battlecards' | 'settings' | 'users') => void;
   currentUser: User | null;
   onOpenLogin: () => void;
   onLogout: () => void;
@@ -51,6 +51,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'battlecards', label: 'Battle Cards', icon: Swords, badge: 'AI' },
     { id: 'documents', label: 'Document Center', icon: Files, badge: null },
     { id: 'settings', label: 'Settings & Gemini', icon: Settings, badge: null },
+    ...(currentUser?.role === 'admin' ? [{ id: 'users', label: 'User Management', icon: UserCheck, badge: 'Admin' }] : []),
   ];
 
   return (

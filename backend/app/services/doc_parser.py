@@ -3,6 +3,48 @@ import re
 from typing import List, Dict, Any
 
 class DocumentParserService:
+    TEXT_EXTENSIONS = {"txt", "md", "csv", "json", "xml", "html", "htm", "log", "yaml", "yml"}
+    SUPPORTED_EXTENSIONS = {"pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx"} | TEXT_EXTENSIONS
+
+    @staticmethod
+    def parse_file(file_path: str, extension: str) -> List[Dict[str, Any]]:
+        extension = extension.lower().lstrip(".")
+        if extension == "pdf":
+            return DocumentParserService.parse_pdf(file_path)
+        if extension in {"doc", "docx"}:
+            return DocumentParserService.parse_docx(file_path)
+        if extension in {"ppt", "pptx"}:
+            return DocumentParserService.parse_pptx(file_path)
+        if extension in {"xls", "xlsx"}:
+            return DocumentParserService.parse_xlsx(file_path)
+        if extension in DocumentParserService.TEXT_EXTENSIONS:
+            return DocumentParserService._fallback_text_extract(file_path)
+        return []
+
+    @staticmethod
+    def parse_xlsx(file_path: str) -> List[Dict[str, Any]]:
+        try:
+            from openpyxl import load_workbook
+            workbook = load_workbook(file_path, read_only=True, data_only=True)
+            rows = []
+            for sheet in workbook.worksheets:
+                rows.append(f"[Sheet: {sheet.title}]")
+                for row in sheet.iter_rows(values_only=True):
+                    values = [str(value).strip() for value in row if value is not None and str(value).strip()]
+                    if values:
+                        rows.append(" | ".join(values))
+            workbook.close()
+            text = "\n".join(rows)
+            return DocumentParserService._chunk_into_page_records(text)
+        except Exception as error:
+            print(f"Error parsing XLSX {file_path}: {error}")
+            return []
+
+    @staticmethod
+    def _chunk_into_page_records(text: str) -> List[Dict[str, Any]]:
+        chunks = DocumentParserService._chunk_into_pages(text)
+        return [{"page_number": index + 1, "text": chunk, "char_count": len(chunk)} for index, chunk in enumerate(chunks)]
+
     @staticmethod
     def parse_pdf(file_path: str) -> List[Dict[str, Any]]:
         """
