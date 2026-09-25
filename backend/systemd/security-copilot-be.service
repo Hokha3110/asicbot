@@ -1,0 +1,15 @@
+[Unit]
+Description=Security Solution Copilot FastAPI Backend
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/security-copilot/backend
+EnvironmentFile=/opt/security-copilot/backend/.env
+ExecStart=/opt/security-copilot/backend/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
