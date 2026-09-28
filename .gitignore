@@ -1,8 +1,14 @@
 # Environment and secrets
 .env
 .env.*
+*.env
+*.env.*
 !.env.example
-**/service_account.json
+!frontend/.env.example
+**/service_account*.json
+**/*tokens*.json
+**/*credentials*.json
+**/*client_secret*.json
 **/*.pem
 **/*.key
 
@@ -20,14 +26,14 @@ env/
 *.db
 *.sqlite
 *.sqlite3
-backend/chroma_db/
-backend/uploaded_docs/
+**/chroma_db/
+**/uploaded_docs/
 backend/security_copilot.db
 
 # Frontend dependencies and build output
-frontend/node_modules/
-frontend/dist/
-frontend/.vite/
+**/node_modules/
+**/dist/
+**/.vite/
 
 # Logs and OS/editor files
 *.log
