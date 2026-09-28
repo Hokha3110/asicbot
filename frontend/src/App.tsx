@@ -225,6 +225,22 @@ export function App() {
     }
   };
 
+  const handleDeleteConversation = async (e: React.MouseEvent, conversationId: number) => {
+    e.stopPropagation();
+    try {
+      await api.deleteConversation(conversationId);
+      setConversationHistory((prev) => prev.filter((c) => c.id !== conversationId));
+      if (activeConversationId === conversationId) {
+        setActiveConversationId(null);
+        setMessages([]);
+        setDetectedSolutions([]);
+        setSources([]);
+      }
+    } catch (err) {
+      console.error('Delete conversation error:', err);
+    }
+  };
+
   return (
     <div className="flex h-screen min-h-[100dvh] w-full min-w-0 overflow-hidden bg-[#070b14] text-slate-100">
       {/* 1. Left Sidebar (With Mobile Drawer support) */}
@@ -237,6 +253,7 @@ export function App() {
         conversations={conversationHistory}
         activeConversationId={activeConversationId}
         onLoadConversation={handleLoadConversation}
+        onDeleteConversation={handleDeleteConversation}
         isCollapsed={isLeftSidebarCollapsed}
         onToggleCollapse={() => setIsLeftSidebarCollapsed((collapsed) => !collapsed)}
         isOpenMobile={isMobileSidebarOpen}
@@ -257,7 +274,7 @@ export function App() {
         />
 
         {/* 3. Center Interactive Area */}
-        <div className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden">
+        <div className="relative flex min-h-0 min-w-0 flex-1 w-full h-full overflow-hidden">
           {activeTab === 'chat' && (
             <ChatWindow
               messages={messages}
@@ -275,42 +292,52 @@ export function App() {
           )}
 
           {activeTab === 'documents' && (
-            <DocumentCenter
-              currentUser={currentUser}
-              onSelectDocForChat={(docName) => {
-                setActiveTab('chat');
-                handleSendMessage(`Tư vấn cho tôi các giải pháp trong tài liệu ${docName}`);
-              }}
-            />
+            <div className="w-full h-full overflow-y-auto overflow-x-hidden min-h-0">
+              <DocumentCenter
+                currentUser={currentUser}
+                onSelectDocForChat={(docName) => {
+                  setActiveTab('chat');
+                  handleSendMessage(`Tư vấn cho tôi các giải pháp trong tài liệu ${docName}`);
+                }}
+              />
+            </div>
           )}
 
           {activeTab === 'solutions' && (
-            <SolutionCatalog
-              onOpenChatWithSolution={handleOpenChatWithSolution}
-            />
+            <div className="w-full h-full overflow-y-auto overflow-x-hidden min-h-0">
+              <SolutionCatalog
+                onOpenChatWithSolution={handleOpenChatWithSolution}
+              />
+            </div>
           )}
 
           {activeTab === 'battlecards' && (
-            <BattleCardHub />
+            <div className="w-full h-full overflow-y-auto overflow-x-hidden min-h-0">
+              <BattleCardHub />
+            </div>
           )}
 
           {activeTab === 'settings' && (
-            <SettingsModal
-              geminiKey={geminiKey}
-              setGeminiKey={setGeminiKey}
-              geminiModel={geminiModel}
-              setGeminiModel={setGeminiModel}
-              openaiKey={openaiKey}
-              setOpenaiKey={setOpenaiKey}
-              ollamaUrl={ollamaUrl}
-              setOllamaUrl={setOllamaUrl}
-              llmProvider={llmProvider}
-              setLlmProvider={setLlmProvider}
-            />
+            <div className="w-full h-full overflow-y-auto overflow-x-hidden min-h-0">
+              <SettingsModal
+                geminiKey={geminiKey}
+                setGeminiKey={setGeminiKey}
+                geminiModel={geminiModel}
+                setGeminiModel={setGeminiModel}
+                openaiKey={openaiKey}
+                setOpenaiKey={setOpenaiKey}
+                ollamaUrl={ollamaUrl}
+                setOllamaUrl={setOllamaUrl}
+                llmProvider={llmProvider}
+                setLlmProvider={setLlmProvider}
+              />
+            </div>
           )}
 
           {activeTab === 'users' && currentUser?.role === 'admin' && (
-            <UserManagement currentUser={currentUser} />
+            <div className="w-full h-full overflow-y-auto overflow-x-hidden min-h-0">
+              <UserManagement currentUser={currentUser} />
+            </div>
           )}
 
           {/* 4. Right Context & Presales Actions Panel (Visible in chat mode / Responsive Mobile Drawer) */}

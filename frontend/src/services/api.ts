@@ -308,6 +308,13 @@ export const api = {
     });
     return res.data;
   },
+  deleteConversation: async (conversationId: number): Promise<void> => {
+    try {
+      await apiClient.delete(`/conversations/${conversationId}`);
+    } catch (err) {
+      console.error('Delete conversation error:', err);
+    }
+  },
 
   // Chat
   sendMessage: async (

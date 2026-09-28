@@ -12,7 +12,8 @@ import {
   MessageSquareText,
   Plus,
   PanelLeftClose,
-  PanelLeftOpen
+  PanelLeftOpen,
+  Trash2
 } from 'lucide-react';
 import { ConversationSummary, User } from '../../types';
 
@@ -25,6 +26,7 @@ interface SidebarProps {
   conversations: ConversationSummary[];
   activeConversationId: number | null;
   onLoadConversation: (conversationId: number) => void;
+  onDeleteConversation?: (e: React.MouseEvent, conversationId: number) => void;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
   isOpenMobile?: boolean;
@@ -40,6 +42,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   conversations,
   activeConversationId,
   onLoadConversation,
+  onDeleteConversation,
   isCollapsed = false,
   onToggleCollapse,
   isOpenMobile = false,
@@ -200,21 +203,34 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 {conversations.length === 0 ? (
                   <p className="px-3 py-2 text-[11px] text-slate-500">Chưa có lịch sử.</p>
                 ) : conversations.map((conversation) => (
-                  <button
+                  <div
                     key={conversation.id}
-                    onClick={() => {
-                      onLoadConversation(conversation.id);
-                      onCloseMobile?.();
-                    }}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-[11px] truncate transition-colors ${
+                    className={`group flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[11px] transition-colors ${
                       activeConversationId === conversation.id
-                        ? 'bg-emerald-950/70 text-emerald-300'
+                        ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-500/30'
                         : 'text-slate-400 hover:bg-emerald-950/40 hover:text-slate-200'
                     }`}
-                    title={conversation.title}
                   >
-                    {conversation.title}
-                  </button>
+                    <button
+                      onClick={() => {
+                        onLoadConversation(conversation.id);
+                        onCloseMobile?.();
+                      }}
+                      className="flex-1 text-left truncate pr-1"
+                      title={conversation.title}
+                    >
+                      {conversation.title}
+                    </button>
+                    {onDeleteConversation && (
+                      <button
+                        onClick={(e) => onDeleteConversation(e, conversation.id)}
+                        className="opacity-0 group-hover:opacity-100 p-1 hover:text-rose-400 hover:bg-rose-950/40 rounded transition-all text-slate-500 shrink-0"
+                        title="Xóa đoạn chat này"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
                 ))}
               </div>
             </div>

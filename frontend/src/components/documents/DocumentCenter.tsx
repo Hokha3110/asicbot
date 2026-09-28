@@ -131,7 +131,7 @@ export const DocumentCenter: React.FC<DocumentCenterProps> = ({ currentUser, onS
   const categories = ['all', 'BAS', 'DSPM', 'Identity', 'SOC', 'DevSecOps'];
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-[#070b09] overflow-y-auto p-4 sm:p-6 md:p-8">
+    <div className="w-full min-h-full bg-[#070b09] p-4 sm:p-6 md:p-8 space-y-6 pb-24">
       {/* Header Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-2.5">
@@ -227,10 +227,10 @@ export const DocumentCenter: React.FC<DocumentCenterProps> = ({ currentUser, onS
       </div>
 
       {/* Document Table */}
-      <div className="glass-panel rounded-2xl overflow-hidden shadow-xl flex-1 border border-emerald-950">
+      <div className="glass-panel rounded-2xl overflow-hidden shadow-xl border border-emerald-950 pb-2 mb-8">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs text-slate-300">
-            <thead className="bg-[#0b1612] text-slate-400 uppercase font-mono text-[10px] tracking-wider border-b border-emerald-950">
+            <thead className="bg-[#0b1612] text-slate-400 uppercase font-mono text-[10px] tracking-wider border-b border-emerald-950 sticky top-0 z-10">
               <tr>
                 <th className="py-3 px-4">Tài liệu</th>
                 <th className="py-3 px-4">Hãng</th>
