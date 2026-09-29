@@ -1,10 +1,10 @@
 /// <reference types="vite/client" />
 import axios from 'axios';
-import { 
-  DocumentItem, 
-  SolutionItem, 
-  BattleCardItem, 
-  ChatMessageItem, 
+import {
+  DocumentItem,
+  SolutionItem,
+  BattleCardItem,
+  ChatMessageItem,
   User,
   UserAdminUpdate,
   ConversationRecord,
@@ -318,7 +318,7 @@ export const api = {
 
   // Chat
   sendMessage: async (
-    message: string, 
+    message: string,
     history: Array<{ role: string; content: string }> = [],
     selectedDocuments: string[] = [],
     llmProvider: string = 'gemini',
@@ -477,9 +477,9 @@ Page: 4-15`;
       };
     }
   },
-  syncGoogleDrive: async (payload?: { folder_id?: string; service_account_json?: string }): Promise<{ 
-    message: string; 
-    synced_count: number; 
+  syncGoogleDrive: async (payload?: { folder_id?: string; service_account_json?: string }): Promise<{
+    message: string;
+    synced_count: number;
     total_chunks?: number;
     synced_files?: Array<{ name: string; vendor?: string; category?: string; pages: number; chunks: number; gdrive_url?: string }>;
     drive_connected?: boolean;
@@ -505,9 +505,9 @@ Page: 4-15`;
       return res.data;
     } catch (err: any) {
       const detail = err?.response?.data?.detail || err?.response?.data?.message || err?.message;
-      return { 
-        success: false, 
-        message: detail || "Không thể kết nối đến Google Drive. Vui lòng kiểm tra lại thông tin Service Account JSON hoặc Folder ID." 
+      return {
+        success: false,
+        message: detail || "Không thể kết nối đến Google Drive. Vui lòng kiểm tra lại thông tin Service Account JSON hoặc Folder ID."
       };
     }
   },
@@ -560,9 +560,9 @@ Page: 4-15`;
       return res.data;
     } catch (err) {
       const q = query.toLowerCase();
-      return MOCK_SOLUTIONS.filter(s => 
-        s.name.toLowerCase().includes(q) || 
-        s.problem.toLowerCase().includes(q) || 
+      return MOCK_SOLUTIONS.filter(s =>
+        s.name.toLowerCase().includes(q) ||
+        s.problem.toLowerCase().includes(q) ||
         s.category.toLowerCase().includes(q) ||
         (s.keywords && s.keywords.some(k => k.toLowerCase().includes(q)))
       );

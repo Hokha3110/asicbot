@@ -116,17 +116,103 @@ class LLMService:
                 print(f"Ollama call notice ({e}). Falling back to Presales Native Engine.")
 
         # 3. Built-in Smart Presales Generator (Ensures 100% reliable responses)
-        return LLMService._smart_presales_fallback_generator(intent_text or prompt, system_prompt)
+        return LLMService._smart_presales_fallback_generator(intent_text or prompt, system_prompt, prompt)
 
     @staticmethod
-    def _smart_presales_fallback_generator(prompt: str, system_prompt: Optional[str]) -> str:
+    def _smart_presales_fallback_generator(prompt: str, system_prompt: Optional[str], full_prompt: Optional[str] = None) -> str:
         """
-        Offline Presales Rule-based AI Engine adhering strictly to Presales guidelines.
+        Offline Presales Rule-based AI Engine.
+        Detects comparison / follow-up intent before solution routing.
         """
-        # Route only from the user question, never retrieved context.
         lower = prompt.lower().strip()
-        
-        # Check intent
+
+        # ── Comparison intent detection ───────────────────────────────────
+        COMPARISON_SIGNALS = [
+            # Vietnamese with diacritics
+            "khác gì", "khác nhau", "so sánh", "khác biệt",
+            "tốt hơn", "nên chọn", "hay là", "phân biệt", "điểm khác",
+            # Vietnamese without diacritics (common in quick typing)
+            "khac gi", "khac nhau", "so sanh", "khac biet",
+            "tot hon", "nen chon", "hay la", "phan biet", "diem khac",
+            # Universal
+            " vs ", "vs.", "compare", "versus", "difference",
+        ]
+        if any(sig in lower for sig in COMPARISON_SIGNALS):
+
+            # Detect which products are being compared
+            products = []
+            product_map = {
+                "picus": "Picus Security (BAS/CTEM)",
+                "scv": "Picus SCV (Security Control Validation)",
+                "apv": "Picus APV (Attack Path Validation)",
+                "bas": "BAS (Breach and Attack Simulation)",
+                "netwrix": "Netwrix",
+                "dspm": "DSPM (Data Security Posture Management)",
+                "access analyzer": "Netwrix Access Analyzer",
+                "graylog": "Graylog Security (SIEM)",
+                "trend micro": "Trend Micro Vision One XDR",
+                "forcepoint": "Forcepoint DSPM & DLP",
+                "cymulate": "Cymulate",
+                "attackiq": "AttackIQ",
+            }
+            detected = [label for key, label in product_map.items() if key in lower]
+
+            if len(detected) >= 2:
+                a, b = detected[0], detected[1]
+            elif "scv" in lower and "apv" in lower:
+                a, b = "Picus SCV (Security Control Validation)", "Picus APV (Attack Path Validation)"
+            elif "scv" in lower:
+                a, b = "Picus SCV", "Sản phẩm được so sánh"
+            elif "apv" in lower:
+                a, b = "Picus APV", "Sản phẩm được so sánh"
+            else:
+                a, b = "Sản phẩm A", "Sản phẩm B"
+
+            # Special case: Picus SCV vs APV — well-known comparison
+            if ("scv" in lower and "apv" in lower) or ("scv" in lower or "apv" in lower):
+                return (
+                    "## So sánh: Picus SCV vs Picus APV\n\n"
+                    "Cả hai đều là module thuộc nền tảng **Picus Complete Security Validation**, nhưng phục vụ mục tiêu khác nhau:\n\n"
+                    "### Điểm giống nhau\n"
+                    "- Đều thuộc hệ sinh thái Picus Security và tích hợp chặt chẽ với nhau.\n"
+                    "- Đều dùng framework MITRE ATT&CK để ánh xạ kỹ thuật tấn công.\n"
+                    "- Đều cung cấp Mitigation Actions tự động cho Firewall, EDR, SIEM.\n\n"
+                    "### Điểm khác biệt chính\n"
+                    "| Tiêu chí | Picus SCV (Security Control Validation) | Picus APV (Attack Path Validation) |\n"
+                    "|---|---|---|\n"
+                    "| **Mục đích chính** | Kiểm tra xem thiết bị bảo mật (Firewall, EDR, SIEM) có **chặn được** kỹ thuật tấn công cụ thể không | Khám phá **đường tấn công** từ điểm xâm nhập đến tài sản quan trọng |\n"
+                    "| **Góc nhìn** | Kiểm thử theo chiều **dọc** — độ hiệu quả của từng control | Phân tích theo chiều **ngang** — bề mặt tấn công toàn mạng |\n"
+                    "| **Cách hoạt động** | Mô phỏng 14.000+ kỹ thuật tấn công thực tế 24/7 mà không gián đoạn hệ thống | Lập bản đồ tất cả đường đi của hacker trong mạng nội bộ |\n"
+                    "| **Output chính** | Security Score, danh sách kiểm soát thất bại, hướng dẫn khắc phục | Attack Graph trực quan, Critical Asset Exposure, ưu tiên vá lỗi |\n"
+                    "| **Đối tượng dùng** | SOC Team, Security Operations, Compliance | CISO, Red Team, Risk Management |\n\n"
+                    "### Khi nào chọn Picus SCV?\n"
+                    "- Khách hàng muốn **xác thực hiệu quả liên tục** của Firewall, EDR, SIEM hiện có.\n"
+                    "- Cần thay thế Pentest định kỳ bằng kiểm thử tự động hàng ngày.\n"
+                    "- Mục tiêu: tối ưu hóa ROI đầu tư bảo mật, đạt tuân thủ ISO/NĐ 13.\n\n"
+                    "### Khi nào chọn Picus APV?\n"
+                    "- Khách hàng cần hiểu toàn bộ **bề mặt tấn công** và rủi ro lateral movement.\n"
+                    "- CISO muốn trình bày **Attack Graph** cho Ban Giám Đốc về rủi ro thực tế.\n"
+                    "- Ưu tiên vá lỗi dựa trên mức độ nguy hiểm theo đường tấn công thực tế.\n\n"
+                    "### Gợi ý tư vấn cho Presales\n"
+                    "- Thường **bán kèm cả hai**: SCV để vận hành hàng ngày, APV để chiến lược dài hạn.\n"
+                    "- Discovery question gợi ý: *\"Anh/chị muốn đo hiệu quả thiết bị đang có, hay muốn nhìn toàn cảnh đường hacker có thể đi trong mạng?\"*\n"
+                    "- Nếu ngân sách giới hạn: bắt đầu với **SCV** (ROI rõ ràng hơn, dễ justify).\n\n"
+                    "> ⚠️ *Lưu ý: Thông tin trên dựa trên kiến thức nền tảng về Picus. "
+                    "Để có số liệu chính xác từ tài liệu nội bộ, hãy đảm bảo backend LLM đang kết nối hoặc tài liệu Picus đã được index vào Vector DB.*"
+                )
+
+            return (
+                f"## So sánh: {a} vs {b}\n\n"
+                "Kali0t chưa có đủ dữ liệu chi tiết từ tài liệu nội bộ để so sánh chính xác hai sản phẩm này.\n\n"
+                "**Để nhận câu trả lời chính xác, hãy:**\n"
+                "1. Đảm bảo backend LLM (Gemini / OpenAI) đang kết nối trong Settings.\n"
+                "2. Upload tài liệu của cả hai sản phẩm vào Document Center.\n\n"
+                "**Câu hỏi làm rõ:**\n"
+                "1. Anh/chị đang muốn so sánh về tính năng kỹ thuật, chi phí, hay use case triển khai?\n"
+                "2. Khách hàng đang cân nhắc mua một trong hai hay kết hợp cả hai?"
+            )
+
+        # ── Solution routing (presales pitch) ─────────────────────────────
         if any(w in lower for w in ["dữ liệu", "dspm", "nhạy cảm", "data", "phân loại", "định danh", "lộ lọt"]):
             return (
                 "## Solution\n"
