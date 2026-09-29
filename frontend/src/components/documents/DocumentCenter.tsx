@@ -462,7 +462,7 @@ export const DocumentCenter: React.FC<DocumentCenterProps> = ({ currentUser, onS
               
               {syncResult && !syncResult.drive_connected && (
                 <a
-                  href="http://localhost:8000/api/v1/auth/google/login"
+                  href={`${import.meta.env.VITE_API_BASE_URL}/auth/google/login`}
                   className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-xs text-white font-bold flex items-center gap-1.5 shadow-glow-jade"
                 >
                   <Cloud className="w-3.5 h-3.5" />

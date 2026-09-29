@@ -512,7 +512,7 @@ Page: 4-15`;
     }
   },
   getDocumentDownloadUrl: (docId: number): string => {
-    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api/v1';
     return `${baseUrl}/documents/download/${docId}`;
   },
   getGoogleDriveStatus: async (): Promise<any> => {
